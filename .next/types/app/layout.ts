@@ -1,4 +1,4 @@
-// File: D:\Code\completed_landing_page\antaeus-nextjs\app\layout.tsx
+// File: D:\Code\websites\Antaeus\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

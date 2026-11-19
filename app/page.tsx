@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowUpRight, Plus, Minus } from "lucide-react";
+import { ArrowUpRight, Plus } from "lucide-react";
 import Image from "next/image";
 
 import { useTranslation } from "@/context/LanguageContext";
@@ -46,6 +46,8 @@ const featureList = [
   "New digital travel management platform",
 ];
 
+const serviceIds = ["marine", "corporate", "leisure"];
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function AntaeusPage() {
@@ -55,6 +57,10 @@ export default function AntaeusPage() {
   const [activeServiceIdx, setActiveServiceIdx] = useState(0);
   const [activeAccordion, setActiveAccordion] = useState<number | null>(0);
   const [setListRef, listInView] = useInView({ threshold: 0.2 });
+  const [setOrbRef, orbInView] = useInView({
+    threshold: 0.1,
+    triggerOnce: false,
+  });
 
   // Lock body scroll when menu is open
   useEffect(() => {
@@ -100,7 +106,10 @@ export default function AntaeusPage() {
   return (
     <div className="font-sans text-[#111] bg-white selection:bg-[#233C7F] selection:text-white min-h-screen flex flex-col overflow-x-hidden">
       {/* ── Navigation ────────────────────────────────────────────────────── */}
-      <Navbar onMenuOpen={() => setIsMenuOpen(true)} />
+      <Navbar
+        onMenuOpen={() => setIsMenuOpen(true)}
+        isMenuOpen={isMenuOpen}
+      />
       <FullscreenMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
@@ -108,10 +117,10 @@ export default function AntaeusPage() {
         {/* Kinetic headline */}
         <div className="relative z-10 select-none">
           <div className="text-[12vw] md:text-[8vw] leading-[0.9] tracking-tighter uppercase flex flex-col">
-            <KineticLine text={t("hero_1")} delay={100} direction="left" />
-            <KineticLine text={t("hero_2")} delay={300} direction="right" />
-            <KineticLine text={t("hero_3")} delay={500} direction="left" />
-            <KineticLine text={t("hero_4")} delay={700} direction="right" />
+            <KineticLine text={t("hero_1")} delay={0} direction="left" />
+            <KineticLine text={t("hero_2")} delay={70} direction="right" />
+            <KineticLine text={t("hero_3")} delay={140} direction="left" />
+            <KineticLine text={t("hero_4")} delay={210} direction="right" />
           </div>
         </div>
 
@@ -121,21 +130,18 @@ export default function AntaeusPage() {
             <RevealLine />
           </div>
 
-          <div className="flex flex-wrap gap-4 md:gap-8 animate-[fadeIn_2s_ease-out_1.2s_both]">
+          <div className="hero-rise flex flex-wrap gap-4 md:gap-8">
             <MagneticButton href="#marine">{t("btn_marine")}</MagneticButton>
             <MagneticButton href="#corporate">{t("btn_corp")}</MagneticButton>
             <MagneticButton href="#leisure">{t("btn_leisure")}</MagneticButton>
           </div>
 
-          <div className="hidden lg:flex flex-col items-end gap-2 animate-[fadeIn_2s_ease-out_1.8s_both] text-xs font-bold tracking-[0.2em] uppercase text-black/40">
+          <div className="hero-rise-late hidden lg:flex flex-col items-end gap-2 text-xs font-bold tracking-[0.2em] uppercase text-black/40">
             <p className="mb-4 text-[#233C7F]">{t("hero_scroll")}</p>
             <div className="flex gap-8">
               {["ATHENS", "BASEL", "MIAMI"].map((city) => (
-                <span
-                  key={city}
-                  className="hover:text-black hover:-translate-y-1 transition-all duration-300 cursor-pointer flex items-center gap-1"
-                >
-                  {city} <ArrowUpRight size={12} />
+                <span key={city} className="flex items-center gap-1">
+                  {city} <ArrowUpRight size={12} aria-hidden="true" />
                 </span>
               ))}
             </div>
@@ -149,7 +155,7 @@ export default function AntaeusPage() {
       {/* ── About ─────────────────────────────────────────────────────────── */}
       <section
         id="about"
-        className="py-20 md:py-32 px-6 md:px-12 max-w-[1400px] mx-auto w-full"
+        className="py-20 md:py-32 px-6 md:px-12 max-w-[1400px] mx-auto w-full scroll-mt-24"
       >
         <SectionHeader
           index="01"
@@ -162,7 +168,7 @@ export default function AntaeusPage() {
       {/* ── Services ──────────────────────────────────────────────────────── */}
       <section
         id="services"
-        className="py-12 md:py-24 px-6 md:px-12 max-w-[1400px] mx-auto w-full"
+        className="py-12 md:py-24 px-6 md:px-12 max-w-[1400px] mx-auto w-full scroll-mt-24"
       >
         <div className="mb-12">
           <h2 className="text-sm font-semibold tracking-widest uppercase mb-12">
@@ -177,30 +183,42 @@ export default function AntaeusPage() {
               <RevealLine />
             </div>
             {services.map((svc, i) => (
-              <div key={i} className="relative">
-                <a
-                  href="#"
-                  className="group flex items-center justify-between py-8 md:py-12 transition-colors relative z-10"
-                  onMouseEnter={() => setActiveServiceIdx(i)}
+              <div
+                key={i}
+                id={serviceIds[i]}
+                className="relative scroll-mt-28"
+              >
+                <button
+                  type="button"
+                  aria-pressed={activeServiceIdx === i}
+                  onPointerEnter={(e) => {
+                    if (e.pointerType === "mouse") setActiveServiceIdx(i);
+                  }}
+                  onFocus={() => setActiveServiceIdx(i)}
+                  onPointerUp={(e) => {
+                    if (e.pointerType !== "mouse") setActiveServiceIdx(i);
+                  }}
+                  className="group flex w-full items-center justify-between py-8 md:py-12 transition-colors relative z-10 text-left"
                 >
                   <span
-                    className={`text-3xl md:text-5xl font-bold tracking-tight uppercase transition-colors duration-500 ${
+                    className={`text-3xl md:text-5xl font-bold tracking-tight uppercase transition-colors duration-200 ${
                       activeServiceIdx === i
                         ? "text-black"
-                        : "text-black/30 group-hover:text-black/60"
+                        : "text-black/30 hover:text-black/60"
                     }`}
                   >
                     {svc.title}
                   </span>
                   <ArrowUpRight
-                    className={`transition-transform duration-500 ${
+                    aria-hidden="true"
+                    className={`transition-[transform,color] duration-200 ${
                       activeServiceIdx === i
                         ? "rotate-45 scale-110 text-black"
                         : "text-black/30"
                     }`}
                     size={32}
                   />
-                </a>
+                </button>
                 <div className="absolute bottom-0 left-0 w-full">
                   <RevealLine />
                 </div>
@@ -209,17 +227,18 @@ export default function AntaeusPage() {
           </div>
 
           {/* Service image */}
-          <div className="w-full md:w-1/2 relative h-[400px] md:h-[600px] bg-gray-100 overflow-hidden group">
+          <div className="w-full md:w-1/2 relative h-[400px] md:h-[600px] bg-gray-100 overflow-hidden">
             {services.map((svc, i) => (
               <Image
                 key={i}
                 src={svc.image}
                 alt={svc.title}
                 fill
-                className={`object-cover transition-all duration-[1200ms] ${
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className={`object-cover transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                   activeServiceIdx === i
-                    ? "opacity-100 scale-100 group-hover:scale-105"
-                    : "opacity-0 scale-110"
+                    ? "opacity-100 scale-100"
+                    : "opacity-0 scale-[1.04]"
                 }`}
               />
             ))}
@@ -235,15 +254,15 @@ export default function AntaeusPage() {
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight uppercase mb-8">
               <RevealText>{t("sec3_title1")}</RevealText>
               <br />
-              <RevealText delay={100}>{t("sec3_title2")}</RevealText>
+              <RevealText delay={60}>{t("sec3_title2")}</RevealText>
             </h2>
             <p className="text-lg text-black/60 font-serif leading-relaxed mb-12">
-              <RevealText delay={200}>
+              <RevealText delay={120}>
                 Antaeus Travel Group provides holistic travel services for
                 almost any place in the world.
               </RevealText>
             </p>
-            <MagneticButton href="#more">{t("btn_learn")}</MagneticButton>
+            <MagneticButton href="#technology">{t("btn_learn")}</MagneticButton>
           </div>
 
           {/* Right feature list */}
@@ -255,17 +274,17 @@ export default function AntaeusPage() {
               {featureList.map((item, i) => (
                 <li
                   key={i}
-                  className={`relative flex items-start gap-6 py-6 group overflow-hidden transition-all duration-700 ${
+                  className={`relative flex items-start gap-6 py-6 group overflow-hidden transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:translate-x-0 motion-reduce:opacity-100 motion-reduce:transition-none ${
                     listInView
                       ? "opacity-100 translate-x-0"
-                      : "opacity-0 translate-x-12"
+                      : "opacity-0 translate-x-8"
                   }`}
-                  style={{ transitionDelay: `${i * 100}ms` }}
+                  style={{ transitionDelay: listInView ? `${i * 60}ms` : "0ms" }}
                 >
                   <span className="text-sm font-mono text-black/40 mt-1.5 w-6">
                     0{i + 1}
                   </span>
-                  <span className="text-xl md:text-2xl font-medium tracking-tight uppercase group-hover:text-[#233C7F] transition-all duration-300">
+                  <span className="text-xl md:text-2xl font-medium tracking-tight uppercase group-hover:text-[#233C7F] transition-colors duration-150">
                     {item}
                   </span>
                   <div className="absolute bottom-0 left-0 w-full h-[1px] bg-black/10 origin-left scale-x-100" />
@@ -290,8 +309,8 @@ export default function AntaeusPage() {
           </div>
           {stats.map((st, i) => (
             <div key={i} className="flex flex-col pl-4 pt-8 relative group">
-              <span className="absolute left-0 top-0 w-[1px] h-full bg-black/20 group-hover:bg-[#233C7F] transition-colors" />
-              <span className="text-6xl md:text-8xl font-bold tracking-tighter mb-2 group-hover:-translate-y-2 transition-transform duration-500">
+              <span className="absolute left-0 top-0 w-[1px] h-full bg-black/20 group-hover:bg-[#233C7F] transition-colors duration-200" />
+              <span className="text-6xl md:text-8xl font-bold tracking-tighter mb-2 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1 motion-reduce:transform-none">
                 <AnimatedNumber end={st.e} suffix={st.suf} />
               </span>
               <span className="text-sm font-semibold tracking-widest uppercase text-black/60">
@@ -305,7 +324,7 @@ export default function AntaeusPage() {
       {/* ── Technology ────────────────────────────────────────────────────── */}
       <section
         id="technology"
-        className="py-20 md:py-32 px-6 md:px-12 max-w-[1400px] mx-auto w-full"
+        className="py-20 md:py-32 px-6 md:px-12 max-w-[1400px] mx-auto w-full scroll-mt-24"
       >
         <SectionHeader
           index="03"
@@ -316,12 +335,29 @@ export default function AntaeusPage() {
 
         <div className="flex flex-col lg:flex-row gap-16 mt-12">
           {/* Animated orb */}
-          <div className="w-full lg:w-1/3 flex items-center justify-center bg-[#F9F9F9] p-12 overflow-hidden group">
+          <div
+            ref={setOrbRef}
+            className="w-full lg:w-1/3 flex items-center justify-center bg-[#F9F9F9] p-12 overflow-hidden"
+          >
             <div className="relative w-32 h-32 flex items-center justify-center">
-              <div className="w-32 h-32 border-4 border-[#233C7F]/20 rounded-full flex items-center justify-center animate-[spin_15s_linear_infinite]">
-                <div className="w-24 h-24 border-2 border-dashed border-[#233C7F]/40 rounded-full animate-[spin_10s_linear_infinite_reverse]" />
+              <div
+                className={`w-32 h-32 border-4 border-[#233C7F]/20 rounded-full flex items-center justify-center motion-reduce:animate-none ${
+                  orbInView ? "animate-[spin_15s_linear_infinite]" : ""
+                }`}
+              >
+                <div
+                  className={`w-24 h-24 border-2 border-dashed border-[#233C7F]/40 rounded-full motion-reduce:animate-none ${
+                    orbInView
+                      ? "animate-[spin_10s_linear_infinite_reverse]"
+                      : ""
+                  }`}
+                />
               </div>
-              <div className="absolute w-12 h-12 bg-[#233C7F] rounded-full animate-[pulse_3s_infinite]" />
+              <div
+                className={`absolute w-12 h-12 bg-[#233C7F] rounded-full motion-reduce:animate-none ${
+                  orbInView ? "animate-[pulse_3s_infinite]" : ""
+                }`}
+              />
             </div>
           </div>
 
@@ -330,47 +366,56 @@ export default function AntaeusPage() {
             <div className="absolute top-0 left-0 w-full">
               <RevealLine />
             </div>
-            {technologies.map((tech, i) => (
-              <div key={i} className="relative">
-                <button
-                  onClick={() =>
-                    setActiveAccordion(activeAccordion === i ? null : i)
-                  }
-                  className="w-full flex items-center justify-between py-8 text-left hover:text-[#233C7F] transition-colors group z-10 relative"
-                >
-                  <span className="text-xl md:text-2xl font-bold tracking-tight uppercase pr-8 group-hover:translate-x-2 transition-transform">
-                    {tech.title}
-                  </span>
-                  <span
-                    className={`p-2 border rounded-full bg-white transition-all duration-500 ${
-                      activeAccordion === i
-                        ? "rotate-180 border-[#233C7F] text-[#233C7F]"
-                        : ""
+            {technologies.map((tech, i) => {
+              const isOpen = activeAccordion === i;
+              return (
+                <div key={i} className="relative">
+                  <button
+                    type="button"
+                    id={`tech-btn-${i}`}
+                    aria-expanded={isOpen}
+                    aria-controls={`tech-panel-${i}`}
+                    onClick={() =>
+                      setActiveAccordion(activeAccordion === i ? null : i)
+                    }
+                    className="w-full flex items-center justify-between py-8 text-left hover:text-[#233C7F] transition-colors duration-200 group z-10 relative"
+                  >
+                    <span className="text-xl md:text-2xl font-bold tracking-tight uppercase pr-8 group-hover:translate-x-1 transition-transform duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none motion-reduce:transform-none">
+                      {tech.title}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className={`p-2 border rounded-full bg-white transition-[transform,color,border-color] duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+                        isOpen
+                          ? "rotate-45 border-[#233C7F] text-[#233C7F]"
+                          : ""
+                      }`}
+                    >
+                      <Plus size={20} />
+                    </span>
+                  </button>
+                  <div
+                    id={`tech-panel-${i}`}
+                    role="region"
+                    aria-labelledby={`tech-btn-${i}`}
+                    className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+                      isOpen
+                        ? "grid-rows-[1fr] opacity-100"
+                        : "grid-rows-[0fr] opacity-0"
                     }`}
                   >
-                    {activeAccordion === i ? (
-                      <Minus size={20} />
-                    ) : (
-                      <Plus size={20} />
-                    )}
-                  </span>
-                </button>
-                <div
-                  className={`overflow-hidden transition-all duration-700 ${
-                    activeAccordion === i
-                      ? "max-h-96 opacity-100 pb-8"
-                      : "max-h-0 opacity-0"
-                  }`}
-                >
-                  <p className="text-black/60 font-serif text-lg leading-relaxed max-w-2xl">
-                    {tech.desc}
-                  </p>
+                    <div className="overflow-hidden">
+                      <p className="text-black/60 font-serif text-lg leading-relaxed max-w-2xl pb-8">
+                        {tech.desc}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-full">
+                    <RevealLine />
+                  </div>
                 </div>
-                <div className="absolute bottom-0 left-0 w-full">
-                  <RevealLine />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

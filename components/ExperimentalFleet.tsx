@@ -37,9 +37,12 @@ export default function ExperimentalFleet() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   return (
-    <section className="relative w-full h-[100vh] bg-[#0a0a0a] flex flex-col overflow-hidden border-t border-white/10 mt-20">
+    <section
+      id="explore"
+      className="relative w-full h-[100vh] bg-[#0a0a0a] flex flex-col overflow-hidden border-t border-white/10 mt-20 scroll-mt-24"
+    >
       {/* Static Absolute Header */}
-      <div className="absolute top-8 left-6 md:left-12 z-40 pointer-events-none mix-blend-difference">
+      <div className="absolute top-8 left-6 md:left-12 z-40 pointer-events-none">
         <h2 className="text-sm font-semibold tracking-widest uppercase text-white/50 mb-2">
           {t("fleet_title")}
         </h2>
@@ -55,9 +58,37 @@ export default function ExperimentalFleet() {
         return (
           <div
             key={i}
-            onMouseEnter={() => setHoveredIdx(i)}
-            onMouseLeave={() => setHoveredIdx(null)}
-            className={`relative flex items-center justify-center border-b border-white/10 overflow-hidden transition-all duration-[1200ms] ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer group ${
+            tabIndex={0}
+            role="group"
+            aria-label={`${item.title} — ${item.subtitle}`}
+            onPointerEnter={(e) => {
+              if (e.pointerType === "mouse") setHoveredIdx(i);
+            }}
+            onPointerLeave={(e) => {
+              if (e.pointerType === "mouse") setHoveredIdx(null);
+            }}
+            onFocus={() => setHoveredIdx(i)}
+            onBlur={(e) => {
+              if (
+                !e.currentTarget.contains(e.relatedTarget as Node | null)
+              ) {
+                setHoveredIdx(null);
+              }
+            }}
+            onPointerUp={(e) => {
+              if (e.pointerType !== "mouse") {
+                setHoveredIdx((prev) => (prev === i ? null : i));
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.target !== e.currentTarget) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setHoveredIdx((prev) => (prev === i ? null : i));
+              }
+            }}
+            style={{ contain: "paint" }}
+            className={`relative flex items-center justify-center border-b border-white/10 overflow-hidden transition-[flex-grow] duration-[450ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none cursor-pointer group ${
               isHovered
                 ? "flex-[4] md:flex-[5]"
                 : hoveredIdx === null
@@ -67,25 +98,28 @@ export default function ExperimentalFleet() {
           >
             {/* Background Image */}
             <div
-              className={`absolute inset-0 w-full h-full transition-all duration-[1500ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              className={`absolute inset-0 w-full h-full transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none ${
                 isHovered
-                  ? "scale-100 opacity-100 blur-0"
-                  : "scale-110 opacity-40 blur-[4px]"
-              } ${isDimmed ? "opacity-10 blur-[10px] scale-125" : ""}`}
+                  ? "scale-100 opacity-100"
+                  : isDimmed
+                  ? "scale-110 opacity-10"
+                  : "scale-105 opacity-40"
+              }`}
             >
               <Image
                 src={item.img}
                 alt={item.title}
                 fill
+                sizes="100vw"
                 className="object-cover"
               />
               <div
-                className={`absolute inset-0 bg-black/50 transition-opacity duration-1000 ${
-                  isHovered ? "opacity-0" : "opacity-100"
+                className={`absolute inset-0 bg-black transition-opacity duration-500 ${
+                  isHovered ? "opacity-0" : "opacity-50"
                 }`}
               />
               <div
-                className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-1000 ${
+                className={`absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent transition-opacity duration-500 ${
                   isHovered ? "opacity-100" : "opacity-0"
                 }`}
               />
@@ -93,30 +127,37 @@ export default function ExperimentalFleet() {
 
             {/* Center Kinetic Title (visible when NOT hovered) */}
             <div
-              className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-all duration-700 ease-out z-10 ${
+              className={`absolute inset-0 flex items-center justify-center pointer-events-none transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none z-10 ${
                 isHovered
-                  ? "opacity-0 scale-150 blur-2xl translate-y-10"
-                  : "opacity-100 scale-100 blur-0 translate-y-0"
-              } ${isDimmed ? "opacity-0" : ""}`}
+                  ? "opacity-0 scale-110 translate-y-6"
+                  : isDimmed
+                  ? "opacity-0 scale-100 translate-y-0"
+                  : "opacity-100 scale-100 translate-y-0"
+              }`}
             >
-              <h2 className="text-[8vw] font-bold text-white uppercase tracking-tighter mix-blend-overlay">
+              <h2 className="text-[8vw] font-bold text-white/80 uppercase tracking-tighter">
                 {item.title}
               </h2>
             </div>
 
-            {/* Expanded Interior Content (revealed on hover) */}
+            {/* Expanded Interior Content (revealed on hover/focus) */}
             <div
-              className={`absolute inset-0 p-6 md:p-12 flex flex-col justify-between pointer-events-none transition-all duration-1000 z-20 ${
+              inert={!isHovered}
+              onClick={(e) => e.stopPropagation()}
+              onPointerUp={(e) => e.stopPropagation()}
+              className={`absolute inset-0 p-6 md:p-12 flex flex-col justify-between z-20 transition-[opacity,transform] duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
                 isHovered
-                  ? "opacity-100 translate-y-0 delay-100"
-                  : "opacity-0 translate-y-16 delay-0"
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-8"
               }`}
             >
               {/* Top Right ID */}
               <div className="self-end overflow-hidden">
                 <span
-                  className={`block font-mono text-white/50 text-xl transition-transform duration-700 ${
-                    isHovered ? "translate-y-0 delay-300" : "-translate-y-full delay-0"
+                  className={`block font-mono text-white/50 text-xl transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+                    isHovered
+                      ? "translate-y-0 delay-[60ms]"
+                      : "-translate-y-full delay-0"
                   }`}
                 >
                   {item.id}
@@ -129,9 +170,9 @@ export default function ExperimentalFleet() {
                 <div className="max-w-xl">
                   <div className="overflow-hidden mb-2">
                     <h3
-                      className={`text-4xl md:text-6xl font-bold uppercase text-white tracking-tight transition-transform duration-700 ${
+                      className={`text-4xl md:text-6xl font-bold uppercase text-white tracking-tight transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
                         isHovered
-                          ? "translate-y-0 delay-200"
+                          ? "translate-y-0 delay-[60ms]"
                           : "translate-y-[120%] delay-0"
                       }`}
                     >
@@ -140,9 +181,9 @@ export default function ExperimentalFleet() {
                   </div>
                   <div className="overflow-hidden mb-6">
                     <p
-                      className={`text-xl md:text-2xl font-serif italic text-white/80 transition-transform duration-700 ${
+                      className={`text-xl md:text-2xl font-serif italic text-white/80 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
                         isHovered
-                          ? "translate-y-0 delay-300"
+                          ? "translate-y-0 delay-[100ms]"
                           : "translate-y-[120%] delay-0"
                       }`}
                     >
@@ -150,10 +191,10 @@ export default function ExperimentalFleet() {
                     </p>
                   </div>
                   <p
-                    className={`text-white/60 text-sm md:text-base leading-relaxed transition-all duration-700 ${
+                    className={`text-white/60 text-sm md:text-base leading-relaxed transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none ${
                       isHovered
-                        ? "opacity-100 translate-y-0 delay-400"
-                        : "opacity-0 translate-y-4 delay-0"
+                        ? "opacity-100 translate-y-0 delay-[140ms]"
+                        : "opacity-0 translate-y-2 delay-0"
                     }`}
                   >
                     {item.desc}
@@ -166,12 +207,12 @@ export default function ExperimentalFleet() {
                     {item.stats.map((stat, idx) => (
                       <li key={idx} className="overflow-hidden">
                         <span
-                          className={`block text-xs md:text-sm font-semibold uppercase tracking-widest text-white transition-transform duration-700 ${
+                          className={`block text-xs md:text-sm font-semibold uppercase tracking-widest text-white transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
                             isHovered ? "translate-y-0" : "translate-y-full"
                           }`}
                           style={{
                             transitionDelay: isHovered
-                              ? `${400 + idx * 100}ms`
+                              ? `${160 + idx * 60}ms`
                               : "0ms",
                           }}
                         >
@@ -183,10 +224,10 @@ export default function ExperimentalFleet() {
                   </ul>
 
                   <div
-                    className={`transition-all duration-1000 pointer-events-auto ${
+                    className={`transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
                       isHovered
-                        ? "opacity-100 scale-100 delay-700"
-                        : "opacity-0 scale-50 delay-0"
+                        ? "opacity-100 scale-100 delay-[200ms]"
+                        : "opacity-0 scale-95 delay-0"
                     }`}
                   >
                     <MagneticButton theme="dark" href="#explore">

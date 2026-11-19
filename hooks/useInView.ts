@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface InViewOptions {
   threshold?: number;
@@ -8,8 +8,9 @@ interface InViewOptions {
 }
 
 export function useInView(
-  options: InViewOptions = { threshold: 0.1, triggerOnce: true }
+  options: InViewOptions = {}
 ): [(node: Element | null) => void, boolean] {
+  const { threshold = 0.1, triggerOnce = true } = options;
   const [ref, setRef] = useState<Element | null>(null);
   const [inView, setInView] = useState(false);
 
@@ -19,16 +20,16 @@ export function useInView(
       ([entry]) => {
         if (entry.isIntersecting) {
           setInView(true);
-          if (options.triggerOnce) observer.unobserve(ref);
-        } else if (!options.triggerOnce) {
+          if (triggerOnce) observer.unobserve(ref);
+        } else if (!triggerOnce) {
           setInView(false);
         }
       },
-      { threshold: options.threshold }
+      { threshold }
     );
     observer.observe(ref);
     return () => observer.disconnect();
-  }, [ref, options.threshold, options.triggerOnce]);
+  }, [ref, threshold, triggerOnce]);
 
   return [setRef, inView];
 }
@@ -39,22 +40,50 @@ interface AnimatedNumberProps {
   duration?: number;
 }
 
-export function useAnimatedNumber({ end, duration = 2000 }: Pick<AnimatedNumberProps, "end" | "duration">) {
+export function useAnimatedNumber({
+  end,
+  duration = 1400,
+}: Pick<AnimatedNumberProps, "end" | "duration">) {
   const [setRef, inView] = useInView({ threshold: 0.5 });
-  const [count, setCount] = useState(0);
+  const nodeRef = useRef<HTMLElement | null>(null);
+
+  const setNode = useCallback(
+    (node: HTMLElement | null) => {
+      nodeRef.current = node;
+      setRef(node);
+    },
+    [setRef]
+  );
 
   useEffect(() => {
-    if (!inView) return;
+    const node = nodeRef.current;
+    if (!inView || !node) return;
+
+    if (
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      node.textContent = String(end);
+      return;
+    }
+
+    let frame = 0;
     let startTime: number | null = null;
+
     const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / (duration ?? 2000), 1);
-      const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-      setCount(Math.floor(easeProgress * end));
-      if (progress < 1) window.requestAnimationFrame(step);
+      if (startTime === null) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      const eased =
+        progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+      node.textContent =
+        progress === 1 ? String(end) : String(Math.floor(eased * end));
+      if (progress < 1) {
+        frame = requestAnimationFrame(step);
+      }
     };
-    window.requestAnimationFrame(step);
+
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
   }, [inView, end, duration]);
 
-  return { setRef, count };
+  return setNode;
 }

@@ -8,12 +8,23 @@ interface Props {
   duration?: number;
 }
 
-export default function AnimatedNumber({ end, suffix = "", duration = 2000 }: Props) {
-  const { setRef, count } = useAnimatedNumber({ end, duration });
+export default function AnimatedNumber({
+  end,
+  suffix = "",
+  duration = 1400,
+}: Props) {
+  const setRef = useAnimatedNumber({ end, duration });
+
   return (
-    <span ref={setRef}>
-      {count}
-      {suffix}
+    <span className="tabular-nums">
+      <span aria-hidden="true">
+        <span ref={setRef}>0</span>
+        {suffix}
+      </span>
+      <span className="sr-only">
+        {end}
+        {suffix}
+      </span>
     </span>
   );
 }

@@ -31,44 +31,51 @@ export default function ShutterGallery() {
         <div className="absolute right-0 top-1/2 -translate-y-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-white/5 to-white/20 pointer-events-none" />
 
         {items.map((item, i) => (
-          <div
+          <button
+            type="button"
             key={i}
-            onMouseEnter={() => setActiveIndex(i)}
-            className="group cursor-pointer py-4 md:py-8"
+            onPointerEnter={(e) => {
+              if (e.pointerType === "mouse") setActiveIndex(i);
+            }}
+            onFocus={() => setActiveIndex(i)}
+            onPointerUp={(e) => {
+              if (e.pointerType !== "mouse") setActiveIndex(i);
+            }}
+            aria-pressed={activeIndex === i}
+            className="group cursor-pointer py-4 md:py-8 text-left"
           >
             <div className="flex items-center gap-4 md:gap-8">
               <span
-                className={`font-mono text-xs md:text-sm transition-colors duration-500 ${
+                className={`font-mono text-xs md:text-sm transition-colors duration-200 ${
                   activeIndex === i ? "text-[#233C7F]" : "text-white/20"
                 }`}
               >
                 {item.id}
               </span>
               <div className="relative">
-                <h2
-                  className="text-[12vw] md:text-[7vw] font-bold tracking-tighter uppercase transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                <span
+                  className="block text-[12vw] md:text-[7vw] font-bold tracking-tighter uppercase transition-[color,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
                   style={{
                     color: activeIndex === i ? "white" : "transparent",
-                    WebkitTextStroke:
-                      activeIndex === i
-                        ? "0px white"
-                        : "1px rgba(255,255,255,0.2)",
+                    WebkitTextStroke: "1px rgba(255,255,255,0.2)",
                     transform:
-                      activeIndex === i ? "translateX(20px)" : "translateX(0px)",
+                      activeIndex === i
+                        ? "translateX(20px)"
+                        : "translateX(0px)",
                   }}
                 >
                   {item.title}
-                </h2>
+                </span>
                 <div
-                  className={`absolute -bottom-2 left-0 h-[2px] bg-[#233C7F] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                  className={`absolute -bottom-2 left-0 h-[2px] w-full origin-left bg-[#233C7F] transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
                     activeIndex === i
-                      ? "w-full opacity-100 translate-x-5"
-                      : "w-0 opacity-0 translate-x-0"
+                      ? "scale-x-100 opacity-100 translate-x-5"
+                      : "scale-x-0 opacity-0 translate-x-0"
                   }`}
                 />
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -90,7 +97,7 @@ export default function ShutterGallery() {
                 return (
                   <div
                     key={sliceIndex}
-                    className="absolute inset-0 w-full h-full transition-transform duration-[1200ms] ease-[cubic-bezier(0.76,0,0.24,1)] overflow-hidden"
+                    className="absolute inset-0 w-full h-full transition-transform duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none overflow-hidden"
                     style={{
                       clipPath: `inset(0 ${right}% 0 ${left}%)`,
                       transform: isActive
@@ -98,7 +105,7 @@ export default function ShutterGallery() {
                         : isEven
                         ? "translateY(-100%)"
                         : "translateY(100%)",
-                      transitionDelay: isActive ? `${sliceIndex * 75}ms` : "0ms",
+                      transitionDelay: isActive ? `${sliceIndex * 50}ms` : "0ms",
                       zIndex: isActive ? 10 : 1,
                     }}
                   >
@@ -107,7 +114,7 @@ export default function ShutterGallery() {
                       alt={item.title}
                       fill
                       sizes="50vw"
-                      className={`object-cover transition-transform duration-[2000ms] ease-out ${
+                      className={`object-cover transition-transform duration-[900ms] ease-out motion-reduce:transition-none ${
                         isActive ? "scale-100" : "scale-110"
                       }`}
                     />

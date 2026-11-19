@@ -1,71 +1,139 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
-interface MousePos {
-  x: number;
-  y: number;
-}
+const RADIUS = 320;
+const MAX_LIFT = 8;
+const MAX_SCALE = 0.04;
+const BASE_COLOR = { r: 17, g: 17, b: 17 };
+const HOVER_COLOR = { r: 35, g: 60, b: 127 };
 
-function KineticChar({ char, mousePos }: { char: string; mousePos: MousePos }) {
-  const charRef = useRef<HTMLSpanElement>(null);
-  const [dist, setDist] = useState(0);
-
-  useEffect(() => {
-    if (!charRef.current) return;
-    const rect = charRef.current.getBoundingClientRect();
-    const charX = rect.left + rect.width / 2;
-    const charY = rect.top + rect.height / 2;
-    const d = Math.sqrt(
-      Math.pow(mousePos.x - charX, 2) + Math.pow(mousePos.y - charY, 2)
-    );
-    setDist(Math.max(0, 1 - d / 400));
-  }, [mousePos]);
-
-  return (
-    <span
-      ref={charRef}
-      className="inline-block transition-all duration-300 ease-out"
-      style={{
-        fontWeight: 700 + dist * 200,
-        letterSpacing: `${dist * -0.05}em`,
-        transform: `translateY(${dist * -10}px)`,
-        color: dist > 0.5 ? "#233C7F" : "inherit",
-      }}
-    >
-      {char === " " ? "\u00A0" : char}
-    </span>
-  );
+function mixChannel(from: number, to: number, amount: number) {
+  return Math.round(from + (to - from) * amount);
 }
 
 interface KineticLineProps {
   text: string;
-  delay: number;
+  delay?: number;
   direction?: "left" | "right";
 }
 
-export default function KineticLine({ text, delay, direction = "left" }: KineticLineProps) {
-  const [mousePos, setMousePos] = useState<MousePos>({ x: 0, y: 0 });
+export default function KineticLine({
+  text,
+  delay = 0,
+  direction = "left",
+}: KineticLineProps) {
+  const lineRef = useRef<HTMLDivElement>(null);
+  const charsRef = useRef<HTMLSpanElement[]>([]);
+  const centersRef = useRef<{ x: number; y: number }[]>([]);
+  const frameRef = useRef<number | null>(null);
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
 
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) =>
-      setMousePos({ x: e.clientX, y: e.clientY });
-    window.addEventListener("mousemove", handleMove);
-    return () => window.removeEventListener("mousemove", handleMove);
+  const measure = useCallback(() => {
+    centersRef.current = charsRef.current.map((el) => {
+      const rect = el.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    });
   }, []);
 
+  const reset = useCallback(() => {
+    pointerRef.current = null;
+    for (const el of charsRef.current) {
+      el.style.transform = "";
+      el.style.color = "";
+    }
+  }, []);
+
+  const render = useCallback(() => {
+    frameRef.current = null;
+    const pointer = pointerRef.current;
+    const chars = charsRef.current;
+    const centers = centersRef.current;
+    if (!pointer) return;
+
+    for (let i = 0; i < chars.length; i++) {
+      const center = centers[i];
+      const el = chars[i];
+      if (!center || !el) continue;
+
+      const distance = Math.hypot(pointer.x - center.x, pointer.y - center.y);
+      const emphasis = Math.max(0, 1 - distance / RADIUS);
+      const lift = emphasis * MAX_LIFT;
+      const scale = 1 + emphasis * MAX_SCALE;
+
+      el.style.transform = `translate3d(0, ${-lift}px, 0) scale(${scale})`;
+      el.style.color =
+        emphasis > 0.01
+          ? `rgb(${mixChannel(BASE_COLOR.r, HOVER_COLOR.r, emphasis)}, ${mixChannel(BASE_COLOR.g, HOVER_COLOR.g, emphasis)}, ${mixChannel(BASE_COLOR.b, HOVER_COLOR.b, emphasis)})`
+          : "";
+    }
+  }, []);
+
+  useEffect(() => {
+    const line = lineRef.current;
+    if (!line) return;
+
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    const hoverable = window.matchMedia(
+      "(hover: hover) and (pointer: fine)"
+    ).matches;
+    if (!hoverable || reduce) return;
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(line);
+    document.fonts?.ready.then(measure).catch(() => {});
+
+    const handleMove = (event: MouseEvent) => {
+      pointerRef.current = { x: event.clientX, y: event.clientY };
+      if (frameRef.current === null) {
+        frameRef.current = requestAnimationFrame(render);
+      }
+    };
+
+    window.addEventListener("mousemove", handleMove, { passive: true });
+    document.addEventListener("mouseleave", reset);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseleave", reset);
+      observer.disconnect();
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      reset();
+    };
+  }, [measure, render, reset]);
+
+  const animationName =
+    direction === "left" ? "slideInRight" : "slideInLeft";
+
   return (
-    <div className="overflow-hidden py-1">
+    <div className="overflow-hidden py-2">
       <div
-        className={`flex whitespace-nowrap transition-all duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          direction === "left"
-            ? "-translate-x-full animate-[slideInRight_1.2s_ease-out_forwards]"
-            : "translate-x-full animate-[slideInLeft_1.2s_ease-out_forwards]"
-        }`}
-        style={{ animationDelay: `${delay}ms` }}
+        ref={lineRef}
+        className="flex whitespace-nowrap"
+        style={{
+          animation: `${animationName} 700ms cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms both`,
+        }}
       >
+        <span className="sr-only">{text}</span>
         {text.split("").map((char, i) => (
-          <KineticChar key={i} char={char} mousePos={mousePos} />
+          <span
+            key={i}
+            ref={(el) => {
+              if (el) charsRef.current[i] = el;
+            }}
+            aria-hidden="true"
+            className="inline-block"
+            style={{
+              transition:
+                "transform 140ms cubic-bezier(0.23, 1, 0.32, 1), color 140ms ease-out",
+            }}
+          >
+            {char === " " ? "\u00A0" : char}
+          </span>
         ))}
       </div>
     </div>

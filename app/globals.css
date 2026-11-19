@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Easing tokens ───────────────────────────────────────────────────────── */
+
+:root {
+  --ease-out-strong: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-soft: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
 /* ── Keyframe Animations ─────────────────────────────────────────────────── */
 
 @keyframes slideInRight {
@@ -35,6 +43,17 @@
   }
 }
 
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes marquee {
   0% {
     transform: translateX(0);
@@ -63,7 +82,15 @@
   animation: marquee-reverse 20s linear infinite;
 }
 
-/* ── Fullscreen Menu Clip-Path States ─────────────────────────────────────── */
+.hero-rise {
+  animation: riseIn 450ms var(--ease-out-strong) 250ms both;
+}
+
+.hero-rise-late {
+  animation: riseIn 450ms var(--ease-out-strong) 400ms both;
+}
+
+/* ── Fullscreen Menu Clip-Path States ────────────────────────────────────── */
 
 .clip-path-open {
   clip-path: circle(150% at 100% 0%);
@@ -73,8 +100,58 @@
   clip-path: circle(0% at 100% 0%);
 }
 
-/* ── Global Scroll & Selection ───────────────────────────────────────────── */
+/* ── Magnetic Button ─────────────────────────────────────────────────────── */
+
+.magnetic-button {
+  scale: 1;
+  transition:
+    scale 120ms var(--ease-out-soft),
+    transform 300ms var(--ease-out-strong);
+}
+
+.magnetic-button:active {
+  scale: 0.97;
+}
+
+/* ── Focus ───────────────────────────────────────────────────────────────── */
+
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* ── Global Scroll ───────────────────────────────────────────────────────── */
 
 html {
-  scroll-behavior: smooth;
+  scroll-padding-top: 7rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ── Reduced Motion ──────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-marquee,
+  .animate-marquee-reverse {
+    animation: none !important;
+    transform: none !important;
+  }
 }
